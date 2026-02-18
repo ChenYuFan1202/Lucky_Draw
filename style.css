@@ -1,0 +1,699 @@
+/* ========================================
+   2026 ISS 春酒 Spring Feast - 抽獎系統
+   CSS 樣式表
+   ======================================== */
+
+/* CSS 變數定義 */
+:root {
+    --primary-red: #C62828;
+    --light-red: #EF5350;
+    --deep-red: #8E0000;
+    --gold: #FFD700;
+    --light-gold: #FFECB3;
+    --dark-gold: #B8860B;
+    --cream: #FFF8E1;
+    --dark-brown: #3E2723;
+    --light-brown: #8B4513;
+    --white: #FFFFFF;
+    --shadow: rgba(0, 0, 0, 0.3);
+    --panel-bg: rgba(255, 248, 225, 0.95);
+}
+
+/* 基本重設 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Microsoft JhengHei', 'PingFang TC', 'Noto Sans TC', sans-serif;
+    background: linear-gradient(135deg, #8E0000 0%, #C62828 50%, #8E0000 100%);
+    min-height: 100vh;
+    color: var(--dark-brown);
+}
+
+/* ========================================
+   Header 區域
+   ======================================== */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 30px;
+    background: linear-gradient(180deg, #B71C1C 0%, #C62828 100%);
+    border-bottom: 4px solid var(--gold);
+    box-shadow: 0 4px 15px var(--shadow);
+    position: relative;
+}
+
+.header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--gold), var(--light-gold), var(--gold));
+}
+
+.header-lantern,
+.header-horse {
+    flex-shrink: 0;
+}
+
+.lantern-icon {
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));
+    animation: sway 3s ease-in-out infinite;
+}
+
+@keyframes sway {
+    0%, 100% { transform: rotate(-5deg); }
+    50% { transform: rotate(5deg); }
+}
+
+.horse-icon {
+    filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.3));
+}
+
+.header-title {
+    flex: 1;
+    text-align: center;
+}
+
+.title-curtain {
+    background: linear-gradient(180deg, var(--deep-red) 0%, var(--primary-red) 50%, var(--deep-red) 100%);
+    padding: 15px 50px;
+    border-radius: 8px;
+    border: 3px solid var(--gold);
+    box-shadow: 
+        inset 0 2px 10px rgba(255,215,0,0.3),
+        0 4px 20px rgba(0,0,0,0.4);
+    position: relative;
+    display: inline-block;
+}
+
+.title-curtain::before,
+.title-curtain::after {
+    content: '◆';
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--gold);
+    font-size: 20px;
+}
+
+.title-curtain::before {
+    left: 15px;
+}
+
+.title-curtain::after {
+    right: 15px;
+}
+
+.title-curtain h1 {
+    color: var(--gold);
+    font-size: 2.2rem;
+    font-weight: bold;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    letter-spacing: 4px;
+}
+
+.title-curtain h2 {
+    color: var(--light-gold);
+    font-size: 1.2rem;
+    font-weight: normal;
+    margin-top: 5px;
+    letter-spacing: 6px;
+}
+
+/* ========================================
+   獎項輸入區
+   ======================================== */
+.prize-input-section {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    background: var(--panel-bg);
+    border-bottom: 2px solid var(--gold);
+}
+
+.prize-input-section label {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: var(--primary-red);
+}
+
+.prize-input-section input {
+    padding: 10px 20px;
+    font-size: 1.1rem;
+    border: 2px solid var(--gold);
+    border-radius: 8px;
+    width: 300px;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.prize-input-section input:focus {
+    border-color: var(--primary-red);
+    box-shadow: 0 0 10px rgba(198, 40, 40, 0.3);
+}
+
+/* ========================================
+   主畫面三欄布局
+   ======================================== */
+.main-content {
+    display: flex;
+    gap: 20px;
+    padding: 20px;
+    min-height: calc(100vh - 200px);
+}
+
+/* Panel 共用樣式 */
+.panel {
+    background: var(--panel-bg);
+    border-radius: 12px;
+    border: 3px solid var(--gold);
+    box-shadow: 0 4px 15px var(--shadow);
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.panel-header {
+    background: linear-gradient(180deg, var(--primary-red) 0%, var(--deep-red) 100%);
+    color: var(--gold);
+    padding: 15px 20px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid var(--gold);
+    user-select: none;
+}
+
+.panel-header:hover {
+    background: linear-gradient(180deg, var(--light-red) 0%, var(--primary-red) 100%);
+}
+
+.panel-header h3 {
+    font-size: 1.1rem;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+}
+
+.toggle-icon {
+    font-size: 1rem;
+    transition: transform 0.3s ease;
+}
+
+.toggle-icon.collapsed {
+    transform: rotate(-90deg);
+}
+
+.panel-content {
+    padding: 15px;
+    max-height: 500px;
+    overflow-y: auto;
+    transition: max-height 0.3s ease;
+}
+
+.panel-content.collapsed {
+    max-height: 0;
+    padding: 0 15px;
+    overflow: hidden;
+}
+
+/* Participants Panel */
+.participants-panel {
+    flex: 0 0 280px;
+}
+
+.participants-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.participant-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 15px;
+    background: var(--white);
+    border-radius: 8px;
+    border: 2px solid var(--light-gold);
+    transition: all 0.2s ease;
+}
+
+.participant-item:hover {
+    border-color: var(--gold);
+    transform: translateX(5px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.participant-item.no-tickets {
+    opacity: 0.5;
+    background: #f5f5f5;
+}
+
+.participant-name {
+    font-weight: bold;
+    color: var(--dark-brown);
+    flex: 1;
+}
+
+.participant-tickets {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ticket-count {
+    background: var(--primary-red);
+    color: var(--white);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: bold;
+    min-width: 35px;
+    text-align: center;
+}
+
+.ticket-btn {
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+}
+
+.ticket-btn.add {
+    background: var(--gold);
+    color: var(--dark-brown);
+}
+
+.ticket-btn.add:hover {
+    background: var(--dark-gold);
+    transform: scale(1.1);
+}
+
+.ticket-btn.remove {
+    background: #ccc;
+    color: var(--dark-brown);
+}
+
+.ticket-btn.remove:hover {
+    background: #999;
+    transform: scale(1.1);
+}
+
+/* Spin Area */
+.spin-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 30px;
+}
+
+.wheel-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.wheel-pointer {
+    position: absolute;
+    right: -30px;
+    font-size: 3rem;
+    color: var(--gold);
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    z-index: 10;
+    filter: drop-shadow(0 0 10px var(--gold));
+}
+
+#wheelCanvas {
+    border-radius: 50%;
+    box-shadow: 
+        0 0 0 8px var(--gold),
+        0 0 0 12px var(--primary-red),
+        0 0 30px rgba(0,0,0,0.5);
+    transition: transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+}
+
+.spin-button {
+    background: linear-gradient(180deg, var(--gold) 0%, var(--dark-gold) 100%);
+    border: 4px solid var(--primary-red);
+    border-radius: 20px;
+    padding: 20px 60px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.spin-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    transition: left 0.5s ease;
+}
+
+.spin-button:hover::before {
+    left: 100%;
+}
+
+.spin-button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+}
+
+.spin-button:active {
+    transform: scale(0.98);
+}
+
+.spin-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.button-text {
+    display: block;
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: var(--primary-red);
+    text-shadow: 1px 1px 2px rgba(255,255,255,0.5);
+}
+
+.button-subtext {
+    display: block;
+    font-size: 1rem;
+    color: var(--dark-brown);
+    margin-top: 5px;
+}
+
+/* Winners Panel */
+.winners-panel {
+    flex: 0 0 280px;
+}
+
+.winners-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.winner-item {
+    display: flex;
+    flex-direction: column;
+    padding: 12px 15px;
+    background: linear-gradient(135deg, var(--light-gold) 0%, var(--white) 100%);
+    border-radius: 8px;
+    border: 2px solid var(--gold);
+    position: relative;
+}
+
+.winner-item::before {
+    content: '🏆';
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 1.2rem;
+}
+
+.winner-prize {
+    font-size: 0.9rem;
+    color: var(--primary-red);
+    font-weight: bold;
+}
+
+.winner-name {
+    font-size: 1.2rem;
+    color: var(--dark-brown);
+    font-weight: bold;
+    margin-top: 5px;
+}
+
+.no-winners {
+    text-align: center;
+    color: #999;
+    padding: 20px;
+    font-style: italic;
+}
+
+.clear-winners-btn {
+    width: 100%;
+    padding: 10px;
+    background: #f5f5f5;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    cursor: pointer;
+    color: #666;
+    transition: all 0.2s ease;
+}
+
+.clear-winners-btn:hover {
+    background: #e0e0e0;
+    border-color: #bbb;
+}
+
+/* ========================================
+   中獎彈窗
+   ======================================== */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease;
+}
+
+.modal-overlay.show {
+    display: flex;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.modal-content {
+    background: linear-gradient(135deg, var(--cream) 0%, var(--white) 100%);
+    border: 5px solid var(--gold);
+    border-radius: 20px;
+    padding: 40px 60px;
+    text-align: center;
+    box-shadow: 0 10px 50px rgba(0,0,0,0.5);
+    animation: popIn 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    max-width: 500px;
+}
+
+@keyframes popIn {
+    from {
+        transform: scale(0.5);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.modal-fireworks {
+    font-size: 3rem;
+    margin-bottom: 15px;
+    animation: sparkle 1s ease infinite;
+}
+
+@keyframes sparkle {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+.modal-title {
+    color: var(--primary-red);
+    font-size: 2rem;
+    margin-bottom: 20px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+}
+
+.modal-prize {
+    background: var(--primary-red);
+    color: var(--gold);
+    padding: 10px 30px;
+    border-radius: 30px;
+    font-size: 1.5rem;
+    font-weight: bold;
+    display: inline-block;
+    margin-bottom: 15px;
+}
+
+.modal-winner {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: var(--dark-brown);
+    margin-bottom: 30px;
+    text-shadow: 2px 2px 0 var(--gold);
+}
+
+.modal-actions {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+}
+
+.modal-btn {
+    padding: 15px 35px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.confirm-btn {
+    background: linear-gradient(180deg, var(--gold) 0%, var(--dark-gold) 100%);
+    color: var(--dark-brown);
+    border: 2px solid var(--dark-gold);
+}
+
+.confirm-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+.redraw-btn {
+    background: linear-gradient(180deg, #f5f5f5 0%, #e0e0e0 100%);
+    color: #666;
+    border: 2px solid #ccc;
+}
+
+.redraw-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+/* ========================================
+   提示訊息 Toast
+   ======================================== */
+.toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--dark-brown);
+    color: var(--white);
+    padding: 15px 30px;
+    border-radius: 10px;
+    font-size: 1rem;
+    z-index: 1001;
+    opacity: 0;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+.toast.error {
+    background: var(--primary-red);
+}
+
+.toast.success {
+    background: #2E7D32;
+}
+
+/* ========================================
+   響應式設計
+   ======================================== */
+@media (max-width: 1200px) {
+    .main-content {
+        flex-direction: column;
+    }
+    
+    .participants-panel,
+    .winners-panel {
+        flex: none;
+        width: 100%;
+    }
+    
+    .spin-area {
+        order: -1;
+    }
+}
+
+@media (max-width: 600px) {
+    .header {
+        padding: 10px 15px;
+    }
+    
+    .title-curtain {
+        padding: 10px 30px;
+    }
+    
+    .title-curtain h1 {
+        font-size: 1.5rem;
+    }
+    
+    .title-curtain h2 {
+        font-size: 0.9rem;
+    }
+    
+    #wheelCanvas {
+        width: 300px;
+        height: 300px;
+    }
+    
+    .spin-button {
+        padding: 15px 40px;
+    }
+    
+    .button-text {
+        font-size: 1.4rem;
+    }
+    
+    .modal-content {
+        padding: 30px 20px;
+        margin: 20px;
+    }
+}
+
+/* 滾動條美化 */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--cream);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--gold);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--dark-gold);
+}
