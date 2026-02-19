@@ -535,6 +535,9 @@ function startSpin() {
     const spinButton = document.getElementById('spinButton');
     spinButton.disabled = true;
     
+    // 禁用獎項選擇，防止抽獎過程中修改
+    document.getElementById('currentPrize').disabled = true;
+    
     // 播放轉盤音效
     playSpinSound();
     
@@ -663,8 +666,9 @@ function confirmWinner() {
     // 重新渲染
     renderAll();
     
-    // 重新啟用按鈕
+    // 重新啟用按鈕和獎項選擇
     document.getElementById('spinButton').disabled = false;
+    document.getElementById('currentPrize').disabled = false;
     
     // 顯示提示
     showToast(`恭喜 Congrats! ${pendingWinner} 獲得 won ${state.currentPrize}！`, 'success');
@@ -679,8 +683,9 @@ function redrawPrize() {
     // 關閉彈窗
     closeModal();
     
-    // 重新啟用按鈕
+    // 重新啟用按鈕和獎項選擇
     document.getElementById('spinButton').disabled = false;
+    document.getElementById('currentPrize').disabled = false;
     
     // 顯示提示
     showToast('獎項已放棄 Prize forfeited', 'error');
