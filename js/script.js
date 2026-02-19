@@ -15,25 +15,69 @@
 
 const STORAGE_KEY = 'iss_spring_feast_2026';
 
-// 預設參與者資料
-const DEFAULT_PARTICIPANTS = [
-    { id: 1, name: "Amy", tickets: 3 },
-    { id: 2, name: "John", tickets: 2 },
-    { id: 3, name: "Emily", tickets: 1 },
-    { id: 4, name: "David", tickets: 2 },
-    { id: 5, name: "Sarah", tickets: 1 },
-    { id: 6, name: "Michael", tickets: 3 },
-    { id: 7, name: "Lisa", tickets: 2 },
-    { id: 8, name: "Kevin", tickets: 1 },
-    { id: 9, name: "Jessica", tickets: 2 },
-    { id: 10, name: "Chris", tickets: 1 }
-];
+// 獎項中英對照表
+const PRIZE_TRANSLATIONS = {
+    '首獎': 'First Prize',
+    '大獎': 'Grand Prize',
+    '二獎': 'Second Prize',
+    '三獎': 'Third Prize',
+    '四獎': 'Fourth Prize',
+    '五獎': 'Fifth Prize',
+    '特獎（一）': 'Special Prize (1)',
+    '特獎（二）': 'Special Prize (2)',
+    '特獎（三）': 'Special Prize (3)',
+    '特獎（四）': 'Special Prize (4)'
+};
+
+/**
+ * 取得帶英文的獎項名稱
+ */
+function getPrizeWithEnglish(prize) {
+    const english = PRIZE_TRANSLATIONS[prize];
+    return english ? `${prize} ${english}` : prize;
+}
+
+// 參與者資料
+async function loadCSV() {
+    try {
+        const response = await fetch('data/name.csv');
+        const text = await response.text();
+        parseCSV(text);
+    } catch (error) {
+        console.error('CSV 載入失敗:', error);
+    }
+}
+
+function parseCSV(text) {
+    const lines = text.split('\n');
+    const participants = [];
+
+    // 從第 1 行開始（跳過 header）
+    for (let i = 1; i < lines.length; i++) {
+        const name = lines[i].trim();
+
+        if (name) {
+            participants.push({
+                id: i,
+                name: name,
+                tickets: 1  // 預設每人 1 張
+            });
+        }
+    }
+
+    state.participants = participants;
+    state.winners = [];
+    state.currentPrize = '特獎（四）';
+
+    saveState();
+    renderAll();
+}
 
 // 應用程式狀態
 let state = {
     participants: [],
     winners: [],
-    currentPrize: '特獎'
+    currentPrize: '特獎（四）'
 };
 
 // 轉盤狀態
@@ -44,6 +88,140 @@ let pendingWinner = null;
 // Canvas 相關
 let canvas, ctx;
 
+// 音效相關
+let audioContext = null;
+
+// ========================================
+// 音效系統
+// ========================================
+
+/**
+ * 初始化音效系統
+ */
+function initAudio() {
+    if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    // 恢復被暫停的 context
+    if (audioContext.state === 'suspended') {
+        audioContext.resume();
+    }
+}
+
+/**
+ * 播放轉盤旋轉音效（柔和的轉盤聲）
+ */
+function playSpinSound() {
+    initAudio();
+    
+    // 只播放咖嗒聲效果，移除刺耳的方波
+    playTickSound(4);
+}
+
+/**
+ * 播放咖崠咖崠聲（模擬指針劃過扇形）
+ */
+function playTickSound(totalDuration) {
+    let tickCount = 0;
+    const maxTicks = 60;
+    
+    function tick() {
+        if (tickCount >= maxTicks) return;
+        
+        const osc = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        
+        osc.connect(gain);
+        gain.connect(audioContext.destination);
+        
+        // 使用三角波，更柔和
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(600 + Math.random() * 200, audioContext.currentTime);
+        
+        // 降低音量
+        gain.gain.setValueAtTime(0.08, audioContext.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.04);
+        
+        osc.start(audioContext.currentTime);
+        osc.stop(audioContext.currentTime + 0.04);
+        
+        tickCount++;
+        
+        // 間隔漸漸變長（減速效果）
+        const progress = tickCount / maxTicks;
+        const interval = 30 + progress * 180; // 30ms 到 210ms
+        
+        if (tickCount < maxTicks) {
+            setTimeout(tick, interval);
+        }
+    }
+    
+    tick();
+}
+
+/**
+ * 播放中獎音效（慶祝的旋律）
+ */
+function playWinSound() {
+    initAudio();
+    
+    // 播放一段歡快的旋律
+    const notes = [523, 659, 784, 1047, 784, 1047]; // C5, E5, G5, C6, G5, C6
+    const durations = [0.15, 0.15, 0.15, 0.3, 0.15, 0.4];
+    
+    let time = audioContext.currentTime;
+    
+    notes.forEach((freq, i) => {
+        const osc = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        
+        osc.connect(gain);
+        gain.connect(audioContext.destination);
+        
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, time);
+        
+        gain.gain.setValueAtTime(0.3, time);
+        gain.gain.exponentialRampToValueAtTime(0.01, time + durations[i]);
+        
+        osc.start(time);
+        osc.stop(time + durations[i]);
+        
+        time += durations[i];
+    });
+    
+    // 加入開彩響聲效果
+    setTimeout(() => playFanfareSound(), 200);
+}
+
+/**
+ * 播放開彩響聲效果
+ */
+function playFanfareSound() {
+    const osc1 = audioContext.createOscillator();
+    const osc2 = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    
+    osc1.connect(gain);
+    osc2.connect(gain);
+    gain.connect(audioContext.destination);
+    
+    osc1.type = 'triangle';
+    osc2.type = 'triangle';
+    
+    // 和弦效果
+    osc1.frequency.setValueAtTime(523, audioContext.currentTime); // C5
+    osc2.frequency.setValueAtTime(659, audioContext.currentTime); // E5
+    
+    gain.gain.setValueAtTime(0.2, audioContext.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.8);
+    
+    osc1.start(audioContext.currentTime);
+    osc2.start(audioContext.currentTime);
+    osc1.stop(audioContext.currentTime + 0.8);
+    osc2.stop(audioContext.currentTime + 0.8);
+}
+
 // ========================================
 // 初始化
 // ========================================
@@ -51,11 +229,20 @@ let canvas, ctx;
 /**
  * 頁面載入時初始化
  */
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     initCanvas();
-    loadState();
-    renderAll();
+    
+    // 先載入 localStorage 資料
+    const hasLocalData = loadState();
+
+    if (!hasLocalData) {
+        await loadCSV();
+    }
+    
+    // 載入資料後再設置事件監聽器（這樣 dropdown 才能同步正確的獎項）
     setupEventListeners();
+
+    renderAll();
 });
 
 /**
@@ -70,14 +257,14 @@ function initCanvas() {
  * 設置事件監聽器
  */
 function setupEventListeners() {
-    // 獎項輸入框變更事件
-    const prizeInput = document.getElementById('currentPrize');
-    prizeInput.value = state.currentPrize;
-    prizeInput.addEventListener('input', function(e) {
-        state.currentPrize = e.target.value || '獎項';
+    // 獎項下拉選單變更事件
+    const prizeSelect = document.getElementById('currentPrize');
+    prizeSelect.value = state.currentPrize;
+    prizeSelect.addEventListener('change', function(e) {
+        state.currentPrize = e.target.value;
         saveState();
     });
-}
+}   
 
 // ========================================
 // 資料存取 (localStorage)
@@ -89,26 +276,20 @@ function setupEventListeners() {
 function loadState() {
     try {
         const saved = localStorage.getItem(STORAGE_KEY);
+
         if (saved) {
             const parsed = JSON.parse(saved);
-            state.participants = parsed.participants || DEFAULT_PARTICIPANTS;
+            state.participants = parsed.participants || [];
             state.winners = parsed.winners || [];
-            state.currentPrize = parsed.currentPrize || '特獎';
-            console.log('狀態已從 localStorage 載入');
-        } else {
-            // 使用預設資料
-            state.participants = JSON.parse(JSON.stringify(DEFAULT_PARTICIPANTS));
-            state.winners = [];
-            state.currentPrize = '特獎';
-            console.log('使用預設資料');
-            saveState();
+            state.currentPrize = parsed.currentPrize || '特獎（四）';
+            return true;
         }
+
+        return false;
+
     } catch (error) {
-        console.error('載入狀態時發生錯誤:', error);
-        state.participants = JSON.parse(JSON.stringify(DEFAULT_PARTICIPANTS));
-        state.winners = [];
-        state.currentPrize = '特獎';
-        showToast('載入資料時發生錯誤，已使用預設資料', 'error');
+        console.error('載入狀態錯誤:', error);
+        return false;
     }
 }
 
@@ -126,7 +307,7 @@ function saveState() {
         console.log('狀態已儲存');
     } catch (error) {
         console.error('儲存狀態時發生錯誤:', error);
-        showToast('儲存資料時發生錯誤', 'error');
+        showToast('儲存資料時發生錯誤 Save error', 'error');
     }
 }
 
@@ -146,16 +327,27 @@ function renderAll() {
 /**
  * 渲染參與者列表
  */
-function renderParticipants() {
+function renderParticipants(searchTerm = '') {
     const container = document.getElementById('participantsList');
     
     if (state.participants.length === 0) {
-        container.innerHTML = '<div class="no-winners">目前沒有參與者</div>';
+        container.innerHTML = '<div class="no-winners">目前沒有參與者<br>No participants</div>';
+        return;
+    }
+
+    // 過濾參與者
+    const searchLower = searchTerm.toLowerCase().trim();
+    const filteredParticipants = searchLower 
+        ? state.participants.filter(p => p.name.toLowerCase().includes(searchLower))
+        : state.participants;
+
+    if (filteredParticipants.length === 0) {
+        container.innerHTML = '<div class="no-winners">找不到符合的參與者<br>No match found</div>';
         return;
     }
 
     let html = '';
-    state.participants.forEach(p => {
+    filteredParticipants.forEach(p => {
         const noTickets = p.tickets === 0 ? 'no-tickets' : '';
         html += `
             <div class="participant-item ${noTickets}" data-id="${p.id}">
@@ -179,16 +371,21 @@ function renderWinners() {
     const container = document.getElementById('winnersList');
     
     if (state.winners.length === 0) {
-        container.innerHTML = '<div class="no-winners">尚無中獎紀錄</div>';
+        container.innerHTML = '<div class="no-winners">尚無中獎紀錄<br>No winners yet</div>';
         return;
     }
 
     let html = '';
     // 反向顯示，最新的在上面
-    [...state.winners].reverse().forEach((w, index) => {
+    const reversedWinners = [...state.winners].reverse();
+    reversedWinners.forEach((w, index) => {
+        // 計算原始陣列中的索引
+        const originalIndex = state.winners.length - 1 - index;
+        // title="刪除此紀錄"
         html += `
             <div class="winner-item">
-                <span class="winner-prize">${escapeHtml(w.prize)}</span>
+                <button class="winner-delete-btn" onclick="removeWinner(${originalIndex})">🗑️</button>
+                <span class="winner-prize">${escapeHtml(getPrizeWithEnglish(w.prize))}</span>
                 <span class="winner-name">${escapeHtml(w.name)}</span>
             </div>
         `;
@@ -262,21 +459,7 @@ function drawWheel() {
         ctx.restore();
     });
     
-    // 繪製中心圓
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, 30, 0, 2 * Math.PI);
-    ctx.fillStyle = '#FFD700';
-    ctx.fill();
-    ctx.strokeStyle = '#B8860B';
-    ctx.lineWidth = 3;
-    ctx.stroke();
-    
-    // 中心文字
-    ctx.fillStyle = '#C62828';
-    ctx.font = 'bold 16px Microsoft JhengHei, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('抽獎', centerX, centerY);
+    // 中央按鈕會蓋在 canvas 上，不需要繪製中心圓
 }
 
 /**
@@ -298,10 +481,11 @@ function drawEmptyWheel() {
     ctx.stroke();
     
     ctx.fillStyle = '#999';
-    ctx.font = 'bold 18px Microsoft JhengHei, sans-serif';
+    ctx.font = 'bold 16px Microsoft JhengHei, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('無可抽獎人員', centerX, centerY);
+    ctx.fillText('無可抽獎人員', centerX, centerY - 12);
+    ctx.fillText('No participants', centerX, centerY + 12);
 }
 
 // ========================================
@@ -335,22 +519,14 @@ function getTotalTickets() {
 function startSpin() {
     // 檢查是否正在抽獎
     if (isSpinning) {
-        showToast('抽獎進行中，請稍候...', 'error');
-        return;
-    }
-    
-    // 檢查獎項名稱
-    const prizeInput = document.getElementById('currentPrize');
-    if (!prizeInput.value.trim()) {
-        showToast('請先輸入獎項名稱！', 'error');
-        prizeInput.focus();
+        showToast('抽獎進行中 Drawing in progress...', 'error');
         return;
     }
     
     // 檢查是否有可抽獎的人
     const totalTickets = getTotalTickets();
     if (totalTickets === 0) {
-        showToast('所有參與者的抽獎券都已用完！', 'error');
+        showToast('所有參與者的抽獎券都已用完！All tickets used!', 'error');
         return;
     }
     
@@ -359,20 +535,39 @@ function startSpin() {
     const spinButton = document.getElementById('spinButton');
     spinButton.disabled = true;
     
+    // 播放轉盤音效
+    playSpinSound();
+    
     // 執行權重抽獎
     const pool = buildWeightedPool();
     const winnerIndex = Math.floor(Math.random() * pool.length);
     const winnerName = pool[winnerIndex];
     
     // 計算轉盤需要轉到的角度
-    // 讓指針指向獲獎者的扇形
+    // 讓指針指向獲獎者的扇形（指針在右側 0 度位置）
     const sliceAngle = 360 / pool.length;
-    const targetSlice = winnerIndex;
     
-    // 旋轉多圈後停在目標位置（指針在右側，所以要調整角度）
-    const spins = 5 + Math.floor(Math.random() * 3); // 5-7 圈
-    const targetAngle = spins * 360 + (360 - targetSlice * sliceAngle - sliceAngle / 2);
+    // 計算目標扇形的停止角度，讓該扇形中心對準指針
+    const stopAngle = 360 - (winnerIndex * sliceAngle + sliceAngle / 2);
     
+    // 確保順時針旋轉：計算從當前角度到目標角度需要轉多少
+    // 至少轉 5-7 圈
+    const minSpins = 5;
+    const extraSpins = Math.floor(Math.random() * 3); // 0-2 額外圈數
+    const totalSpins = minSpins + extraSpins;
+    
+    // 計算當前角度在 0-360 範圍內的位置
+    const currentAngleMod = ((currentRotation % 360) + 360) % 360;
+    
+    // 計算需要額外轉的角度才能到達 stopAngle
+    let extraAngle = stopAngle - currentAngleMod;
+    if (extraAngle <= 0) {
+        extraAngle += 360; // 確保是正向旋轉
+    }
+    
+    // 最終目標角度 = 當前角度 + 完整圈數 + 額外角度
+    const targetAngle = currentRotation + (totalSpins * 360) + extraAngle;
+
     // 執行動畫
     animateWheel(targetAngle, winnerName);
 }
@@ -396,13 +591,17 @@ function animateWheel(targetAngle, winnerName) {
         currentRotation = currentAngle;
         
         // 旋轉 canvas
+        // currentRotation = targetAngle % 360;
         canvas.style.transform = `rotate(${currentAngle}deg)`;
         
         if (progress < 1) {
             requestAnimationFrame(animate);
         } else {
-            // 動畫結束
-            onSpinComplete(winnerName);
+            
+            // 小延遲再顯示彈窗
+            setTimeout(() => {
+                onSpinComplete(winnerName);
+            }, 3500);
         }
     }
     
@@ -416,6 +615,9 @@ function onSpinComplete(winnerName) {
     isSpinning = false;
     pendingWinner = winnerName;
     
+    // 播放中獎音效
+    playWinSound();
+    
     // 顯示中獎彈窗
     showWinnerModal(winnerName);
 }
@@ -428,7 +630,7 @@ function showWinnerModal(winnerName) {
     const modalPrize = document.getElementById('modalPrize');
     const modalWinner = document.getElementById('modalWinner');
     
-    modalPrize.textContent = state.currentPrize;
+    modalPrize.textContent = getPrizeWithEnglish(state.currentPrize);
     modalWinner.textContent = winnerName;
     
     modal.classList.add('show');
@@ -465,7 +667,7 @@ function confirmWinner() {
     document.getElementById('spinButton').disabled = false;
     
     // 顯示提示
-    showToast(`恭喜 ${pendingWinner} 獲得 ${state.currentPrize}！`, 'success');
+    showToast(`恭喜 Congrats! ${pendingWinner} 獲得 won ${state.currentPrize}！`, 'success');
     
     pendingWinner = null;
 }
@@ -481,7 +683,7 @@ function redrawPrize() {
     document.getElementById('spinButton').disabled = false;
     
     // 顯示提示
-    showToast('獎項已放棄，可重新抽獎', 'error');
+    showToast('獎項已放棄 Prize forfeited', 'error');
     
     pendingWinner = null;
 }
@@ -495,6 +697,29 @@ function closeModal() {
 }
 
 // ========================================
+// 搜尋功能
+// ========================================
+
+/**
+ * 過濾參與者列表
+ */
+function filterParticipants() {
+    const searchInput = document.getElementById('participantSearch');
+    const searchTerm = searchInput.value;
+    renderParticipants(searchTerm);
+}
+
+/**
+ * 清除搜尋
+ */
+function clearSearch() {
+    const searchInput = document.getElementById('participantSearch');
+    searchInput.value = '';
+    renderParticipants();
+    searchInput.focus();
+}
+
+// ========================================
 // 票券管理
 // ========================================
 
@@ -502,6 +727,12 @@ function closeModal() {
  * 調整參與者的票券數量
  */
 function adjustTickets(participantId, delta) {
+    // 抽獎進行中不允許調整
+    if (isSpinning) {
+        showToast('抽獎進行中 Please wait...', 'error');
+        return;
+    }
+
     const participant = state.participants.find(p => p.id === participantId);
     if (!participant) {
         console.error('找不到參與者:', participantId);
@@ -512,15 +743,17 @@ function adjustTickets(participantId, delta) {
     
     // 確保不小於 0
     if (newTickets < 0) {
-        showToast('抽獎券數量不能小於 0', 'error');
+        showToast('抽獎券數量不能小於 0 Cannot be negative', 'error');
         return;
     }
     
     participant.tickets = newTickets;
     
-    // 儲存並重新渲染
+    // 儲存並重新渲染（保持搜尋狀態）
     saveState();
-    renderParticipants();
+    const searchInput = document.getElementById('participantSearch');
+    const searchTerm = searchInput ? searchInput.value : '';
+    renderParticipants(searchTerm);
     drawWheel();
 }
 
@@ -553,15 +786,66 @@ function togglePanel(panelName) {
  */
 function clearWinners() {
     if (state.winners.length === 0) {
-        showToast('目前沒有中獎紀錄', 'error');
+        showToast('目前沒有中獎紀錄 No records', 'error');
         return;
     }
     
-    if (confirm('確定要清除所有中獎紀錄嗎？')) {
+    if (confirm('確定要清除所有中獎紀錄嗎？\nClear all winner records?')) {
         state.winners = [];
         saveState();
         renderWinners();
-        showToast('中獎紀錄已清除', 'success');
+        showToast('中獎紀錄已清除 Records cleared', 'success');
+    }
+}
+
+/**
+ * 重置參與者（清除 localStorage 並重新讀取 CSV）
+ */
+async function resetParticipants() {
+    if (confirm('確定要重置所有參與者嗎？\nReset all participants?\n\n這將清除所有票券變更，恢復預設每人 1 張。\nThis will reset all tickets to default (1).\n\n（中獎紀錄會保留 Winner records will be kept）')) {
+        try {
+            const response = await fetch('data/name.csv');
+            const text = await response.text();
+            const lines = text.split('\n');
+            const participants = [];
+            
+            for (let i = 1; i < lines.length; i++) {
+                const name = lines[i].trim();
+                if (name) {
+                    participants.push({
+                        id: i,
+                        name: name,
+                        tickets: 1
+                    });
+                }
+            }
+            
+            state.participants = participants;
+            saveState();
+            renderAll();
+            showToast('參與者已重置 Participants reset', 'success');
+        } catch (error) {
+            console.error('重置失敗:', error);
+            showToast('重置失敗 Reset failed', 'error');
+        }
+    }
+}
+
+/**
+ * 刪除單一中獎紀錄
+ */
+function removeWinner(index) {
+    if (index < 0 || index >= state.winners.length) {
+        showToast('找不到該中獎紀錄 Record not found', 'error');
+        return;
+    }
+    
+    const winner = state.winners[index];
+    if (confirm(`確定要刪除此紀錄嗎？ Delete this record?\n${winner.name} - ${winner.prize}`)) {
+        state.winners.splice(index, 1);
+        saveState();
+        renderWinners();
+        showToast(`已刪除 Deleted: ${winner.name}`, 'success');
     }
 }
 
@@ -617,7 +901,7 @@ function showToast(message, type = 'info') {
  * 重設所有資料
  */
 function resetAllData() {
-    if (confirm('確定要重設所有資料嗎？這將清除所有抽獎紀錄和票券變更。')) {
+    if (confirm('確定要重設所有資料嗎？ Reset all data?\n這將清除所有抽獎紀錄和票券變更。\nThis will clear all records and ticket changes.')) {
         localStorage.removeItem(STORAGE_KEY);
         location.reload();
     }
@@ -646,7 +930,7 @@ function addParticipant(name, tickets = 1) {
     });
     saveState();
     renderAll();
-    showToast(`已新增參與者: ${name}`, 'success');
+    showToast(`已新增 Added: ${name}`, 'success');
 }
 
 /**
@@ -663,7 +947,7 @@ function removeParticipant(id) {
     state.participants.splice(index, 1);
     saveState();
     renderAll();
-    showToast(`已移除參與者: ${name}`, 'success');
+    showToast(`已移除 Removed: ${name}`, 'success');
 }
 
 // 在全域暴露除錯函數
@@ -671,3 +955,4 @@ window.resetAllData = resetAllData;
 window.exportState = exportState;
 window.addParticipant = addParticipant;
 window.removeParticipant = removeParticipant;
+window.removeWinner = removeWinner;

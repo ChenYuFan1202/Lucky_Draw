@@ -4,24 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>2026 ISS 春酒 Spring Feast - 抽獎系統</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" type="image/png" href="assets/favicon.png">
 </head>
 <body>
     <!-- Header 區域 -->
     <header class="header">
         <div class="header-lantern">
-            <!-- 燈籠 SVG -->
-            <svg class="lantern-icon" viewBox="0 0 64 96" width="48" height="72">
-                <rect x="24" y="0" width="16" height="8" fill="#8B4513"/>
-                <rect x="28" y="8" width="8" height="6" fill="#D4AF37"/>
-                <ellipse cx="32" cy="45" rx="22" ry="30" fill="#E53935"/>
-                <ellipse cx="32" cy="45" rx="18" ry="25" fill="#EF5350"/>
-                <rect x="28" y="73" width="8" height="4" fill="#D4AF37"/>
-                <path d="M28 77 Q32 95 36 77" stroke="#D4AF37" fill="none" stroke-width="2"/>
-                <line x1="30" y1="85" x2="30" y2="92" stroke="#D4AF37" stroke-width="1.5"/>
-                <line x1="34" y1="85" x2="34" y2="92" stroke="#D4AF37" stroke-width="1.5"/>
-                <text x="32" y="48" text-anchor="middle" fill="#FFD700" font-size="12" font-weight="bold">福</text>
-            </svg>
+            <!-- 燈籠圖片 -->
+            <img src="assets/lantern.png" alt="燈籠" class="lantern-icon" />
         </div>
         <div class="header-title">
             <div class="title-curtain">
@@ -30,28 +21,26 @@
             </div>
         </div>
         <div class="header-horse">
-            <!-- 馬 SVG -->
-            <svg class="horse-icon" viewBox="0 0 80 80" width="56" height="56">
-                <ellipse cx="45" cy="50" rx="25" ry="18" fill="#8B4513"/>
-                <circle cx="22" cy="32" r="12" fill="#8B4513"/>
-                <polygon points="18,22 22,10 26,22" fill="#8B4513"/>
-                <polygon points="12,22 16,12 20,22" fill="#8B4513"/>
-                <ellipse cx="20" cy="35" rx="3" ry="2" fill="#FFD700"/>
-                <circle cx="19" cy="34" r="1.5" fill="#000"/>
-                <path d="M30 25 Q45 15 55 25" stroke="#2C1810" fill="none" stroke-width="4"/>
-                <line x1="30" y1="65" x2="28" y2="78" stroke="#8B4513" stroke-width="5"/>
-                <line x1="40" y1="67" x2="38" y2="80" stroke="#8B4513" stroke-width="5"/>
-                <line x1="55" y1="66" x2="57" y2="79" stroke="#8B4513" stroke-width="5"/>
-                <line x1="62" y1="63" x2="66" y2="76" stroke="#8B4513" stroke-width="5"/>
-                <path d="M70 48 Q80 45 78 55" stroke="#2C1810" fill="none" stroke-width="3"/>
-            </svg>
+            <!-- 可愛馬圖片 -->
+            <img src="assets/horse.png" alt="馬年吉祥" class="horse-icon" />
         </div>
     </header>
 
-    <!-- 獎項輸入區 -->
+    <!-- 獎項選擇區 -->
     <div class="prize-input-section">
-        <label for="currentPrize">目前獎項：</label>
-        <input type="text" id="currentPrize" placeholder="輸入獎項名稱（例如：特獎）" />
+        <label for="currentPrize">目前獎項 Current Prize：</label>
+        <select id="currentPrize">
+            <option value="首獎">首獎 First Prize</option>
+            <option value="大獎">大獎 Grand Prize</option>
+            <option value="二獎">二獎 Second Prize</option>
+            <option value="三獎">三獎 Third Prize</option>
+            <option value="四獎">四獎 Fourth Prize</option>
+            <option value="五獎">五獎 Fifth Prize</option>
+            <option value="特獎（一）">特獎（一）Special Prize (1)</option>
+            <option value="特獎（二）">特獎（二）Special Prize (2)</option>
+            <option value="特獎（三）">特獎（三）Special Prize (3)</option>
+            <option value="特獎（四）">特獎（四）Special Prize (4)</option>
+        </select>
     </div>
 
     <!-- 主畫面三欄布局 -->
@@ -59,39 +48,44 @@
         <!-- 左欄：Participants Panel -->
         <aside class="panel participants-panel">
             <div class="panel-header" onclick="togglePanel('participants')">
-                <h3>🎫 參與者列表</h3>
+                <h3>🎫 參與者列表 Participants</h3>
                 <span class="toggle-icon" id="participants-toggle">▼</span>
             </div>
             <div class="panel-content" id="participants-content">
+                <div class="search-box">
+                    <input type="text" id="participantSearch" placeholder="搜尋 Search..." oninput="filterParticipants()">
+                    <button class="search-clear-btn" onclick="clearSearch()" title="清除搜尋 Clear">×</button>
+                </div>
                 <div class="participants-list" id="participantsList">
                     <!-- 動態生成 -->
                 </div>
+                <button class="clear-winners-btn" onclick="resetParticipants()">重置參與者 Reset</button>
             </div>
         </aside>
 
         <!-- 中間：Spin Area -->
         <section class="spin-area">
             <div class="wheel-container">
-                <div class="wheel-pointer">▶</div>
+                <div class="wheel-pointer">◀</div>
                 <canvas id="wheelCanvas" width="400" height="400"></canvas>
+                <button class="center-spin-btn" id="spinButton" onclick="startSpin()">
+                    <span class="center-spin-text">SPIN</span>
+                    <span class="center-spin-subtext">抽獎</span>
+                </button>
             </div>
-            <button class="spin-button" id="spinButton" onclick="startSpin()">
-                <span class="button-text">PUSH TO SPIN</span>
-                <span class="button-subtext">按我抽獎</span>
-            </button>
         </section>
 
         <!-- 右欄：Winners Panel -->
         <aside class="panel winners-panel">
             <div class="panel-header" onclick="togglePanel('winners')">
-                <h3>🏆 中獎紀錄</h3>
+                <h3>🏆 中獎紀錄 Winners</h3>
                 <span class="toggle-icon" id="winners-toggle">▼</span>
             </div>
             <div class="panel-content" id="winners-content">
                 <div class="winners-list" id="winnersList">
                     <!-- 動態生成 -->
                 </div>
-                <button class="clear-winners-btn" onclick="clearWinners()">清除所有紀錄</button>
+                <button class="clear-winners-btn" onclick="clearWinners()">清除所有紀錄 Clear All</button>
             </div>
         </aside>
     </main>
@@ -100,12 +94,12 @@
     <div class="modal-overlay" id="winnerModal">
         <div class="modal-content">
             <div class="modal-fireworks">🎆🎇🎆</div>
-            <h2 class="modal-title">🎊 恭喜中獎！🎊</h2>
+            <h2 class="modal-title">🎊 恭喜中獎！🎊Congratulations! </h2>
             <div class="modal-prize" id="modalPrize"></div>
             <div class="modal-winner" id="modalWinner"></div>
             <div class="modal-actions">
-                <button class="modal-btn confirm-btn" onclick="confirmWinner()">確認領獎</button>
-                <button class="modal-btn redraw-btn" onclick="redrawPrize()">重新抽獎</button>
+                <button class="modal-btn confirm-btn" onclick="confirmWinner()">確認領獎 Confirm</button>
+                <button class="modal-btn redraw-btn" onclick="redrawPrize()">重新抽獎 Redraw</button>
             </div>
         </div>
     </div>
@@ -113,6 +107,6 @@
     <!-- 提示訊息 -->
     <div class="toast" id="toast"></div>
 
-    <script src="script.js"></script>
+    <script src="js/script.js"></script>
 </body>
 </html>
